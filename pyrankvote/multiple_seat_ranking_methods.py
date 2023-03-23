@@ -6,10 +6,12 @@ Implemented methods:
  - Preferential block voting
 """
 
-from typing import List
-from pyrankvote.helpers import CompareMethodIfEqual, ElectionManager, ElectionResults
-from pyrankvote.models import Candidate, Ballot
 import math
+from typing import List
+
+from pyrankvote.helpers import (CompareMethodIfEqual, ElectionManager,
+                                ElectionResults)
+from pyrankvote.models import Ballot, Candidate
 
 
 def preferential_block_voting(
@@ -159,7 +161,7 @@ def single_transferable_vote(
     election_results = ElectionResults()
 
     voters, seats = manager.get_number_of_non_exhausted_ballots(), number_of_seats
-    votes_needed_to_win: float = voters / float((seats + 1))  # Drop quota
+    votes_needed_to_win: float = round((voters / (seats + 1)) + 1)
 
     # Remove worst candidate until same number of candidates left as electable
     # While it is more candidates left than electable
