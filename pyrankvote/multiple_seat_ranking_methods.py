@@ -140,7 +140,7 @@ def single_transferable_vote(
     Voters rank candidates and are granted as one vote each. If a candidate gets more votes than the threshold for being
     elected, the candidate is proclaimed as winner. This function uses the Droop quota, where
 
-        droop_quota = votes/(seats+1)
+        droop_quota = votes/(seats+1) + 1
 
     If one candidate get more votes than the threshold the excess votes are transfered to voters that voted for this
     candidate's 2nd (or 3rd, 4th etc) alternative. If no candidate get over the threshold, the candidate with fewest votes
@@ -161,7 +161,8 @@ def single_transferable_vote(
     election_results = ElectionResults()
 
     voters, seats = manager.get_number_of_non_exhausted_ballots(), number_of_seats
-    votes_needed_to_win: float = round((voters / (seats + 1)) + 1)
+    votes_needed_to_win: float = math.floor((voters / (seats + 1))+1)
+    election_results.threshold = votes_needed_to_win
 
     # Remove worst candidate until same number of candidates left as electable
     # While it is more candidates left than electable
@@ -220,6 +221,24 @@ def single_transferable_vote(
             for candidate in manager.get_candidates_in_race()[::-1]:
                 candidates_to_reject.append(candidate)
                 manager.reject_candidate(candidate)
+
+
+        # Calculate votes that will be transfered
+        if manager.get_number_of_candidates_in_race() > 0:
+            votes_to_transfer = 0.0
+
+            for candidate in candidates_to_elect:
+                votes_for_candidate = manager.get_number_of_votes(candidate)
+                excess_votes: float = votes_for_candidate - votes_needed_to_win
+                votes_to_transfer += excess_votes
+
+            for candidate in candidates_to_reject:
+                votes_for_candidate = manager.get_number_of_votes(candidate)
+                votes_to_transfer += votes_for_candidate
+
+            manager._number_of_transferred_votes = votes_to_transfer
+        else:
+            manager._number_of_transferred_votes = 0.0
 
         # Register round result
         election_results.register_round_results(manager.get_results())

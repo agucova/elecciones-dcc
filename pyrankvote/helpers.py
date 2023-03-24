@@ -2,13 +2,13 @@
 Helper classes used by multiple_seat_ranking_methods.py
 
 """
-from pyrankvote.models import Candidate, Ballot
-
-import random
 import functools
+import random
 from typing import List, NamedTuple
+
 from tabulate import tabulate
 
+from pyrankvote.models import Ballot, Candidate
 
 CONSIDERED_EQUAL_MARGIN = 0.001
 
@@ -32,12 +32,18 @@ class CandidateResult(NamedTuple):
 class RoundResult:
     candidate_results: List[CandidateResult]
     number_of_blank_votes: float
+    number_of_transferred_votes: float
+
 
     def __init__(
-        self, candidate_results: List[CandidateResult], number_of_blank_votes: float
+        self, candidate_results: List[CandidateResult],
+        number_of_blank_votes: float,
+        number_of_transferred_votes: float
     ):
         self.candidate_results = candidate_results
         self.number_of_blank_votes = number_of_blank_votes
+        self.number_of_transferred_votes = number_of_transferred_votes
+
 
     def __repr__(self) -> str:
         representation_string = "<RoundResult>"
@@ -151,7 +157,7 @@ class ElectionManager:
             Ballot
         ] = []  # Blank and exhausted ballots (all alternatives used up)
         self._number_of_blank_votes = 0.0
-
+        self._number_of_transferred_votes = 0.0
         self._number_of_candidates = len(candidates)
         self._number_of_votes_pr_voter = number_of_votes_pr_voter
         self._compare_method_if_equal = compare_method_if_equal
@@ -325,7 +331,11 @@ class ElectionManager:
             candidate_vc.as_candidate_result() for candidate_vc in candidates_vc
         ]
 
-        round_result = RoundResult(candidate_results, self._number_of_blank_votes)
+        round_result = RoundResult(
+            candidate_results,
+            self._number_of_blank_votes,
+            self._number_of_transferred_votes
+        )
         return round_result
 
     # INTERNAL METHODS
@@ -421,6 +431,7 @@ class ElectionResults:
      - the ranking of candidates
      - how many votes they got
      - their election status (elected, hopeful, rejected)
+     - the droop quota (exported as threshold in the Universal Tabulation Format)
 
     ElectionResults.get_winners() makes it trivial to receive the elected candidates.
 
@@ -432,6 +443,7 @@ class ElectionResults:
 
     def __init__(self):
         self.rounds: List[RoundResult] = []
+        self.threshold: float | None = None
 
     def register_round_results(self, round_: RoundResult):
         self.rounds.append(round_)
