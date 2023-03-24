@@ -7,7 +7,7 @@ rows: list[dict[str, str]] = []
 candidates: set[Candidate] = set()
 
 # Infer list of candidates from the input files
-with open("votes.csv", newline="") as csvfile:
+with open("votos_real.csv", newline="") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         rows.append(row)
